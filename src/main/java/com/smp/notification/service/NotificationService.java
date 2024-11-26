@@ -3,7 +3,6 @@ package com.smp.notification.service;
 import com.smp.notification.dto.SchoolEntityDTO;
 import com.smp.notification.entity.NotificationEntity;
 import com.smp.notification.enums.NotificationStatus;
-import com.smp.notification.exception.InvalidInputException;
 import com.smp.notification.exception.ProcessingException;
 import com.smp.notification.repository.NotificationRepository;
 import org.springframework.stereotype.Service;
@@ -16,24 +15,20 @@ public class NotificationService {
     public NotificationService(NotificationRepository notificationRepository) {
         this.notificationRepository = notificationRepository;
     }
-
-    // Метод для обработки уведомления о создании школы
-    public void handleSchoolCreationNotification(SchoolEntityDTO school) {
-        // Проверка на существующее уведомление
-        if (notificationRepository.existsBySchoolId(school.getId())) {
-            System.out.println("Notification already exists for school ID: " + school.getId());
-            return; // Если уведомление уже существует, выходим из метода
-        }
-
-        // Логика создания нового уведомления
-        try {
-            NotificationEntity notification = createNotification(school, "School registered successfully", NotificationStatus.SUCCESS);
-            notificationRepository.save(notification);
-            System.out.println("Notification saved: " + notification.getEvent());
-        } catch (Exception e) {
-            throw new ProcessingException("Error saving notification: " + e.getMessage());
-        }
+public void handleSchoolCreationNotification(SchoolEntityDTO school) {
+    if (notificationRepository.existsBySchoolId(school.getId())) {
+        System.out.println("Notification already exists for school ID: " + school.getId());
+        return; // Если уведомление уже существует, выходим из метода
     }
+
+    try {
+        NotificationEntity notification = createNotification(school, "School registered successfully", NotificationStatus.SUCCESS);
+        notificationRepository.save(notification);
+        System.out.println("Notification saved: " + notification.getEvent());
+    } catch (Exception e) {
+        throw new ProcessingException("Error saving notification: " + e.getMessage());
+    }
+}
 
     // Метод для обработки обновления уведомления о школе
     public void handleSchoolUpdateNotification(SchoolEntityDTO school) {
@@ -72,7 +67,6 @@ public class NotificationService {
         }
     }
 
-    // Вспомогательный метод для создания уведомления
     private NotificationEntity createNotification(SchoolEntityDTO school, String eventMessage, NotificationStatus status) {
         NotificationEntity notification = new NotificationEntity();
         notification.setSchoolId(school.getId()); // Устанавливаем ID школы
