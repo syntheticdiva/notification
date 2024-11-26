@@ -15,71 +15,87 @@ public class NotificationService {
     public NotificationService(NotificationRepository notificationRepository) {
         this.notificationRepository = notificationRepository;
     }
-public void handleSchoolCreationNotification(SchoolEntityDTO school) {
-    if (notificationRepository.existsBySchoolId(school.getId())) {
-        System.out.println("Notification already exists for school ID: " + school.getId());
-        return; // Если уведомление уже существует, выходим из метода
-    }
 
-    try {
-        NotificationEntity notification = createNotification(school, "School registered successfully", NotificationStatus.SUCCESS);
-        notificationRepository.save(notification);
-        System.out.println("Notification saved: " + notification.getEvent());
-    } catch (Exception e) {
-        throw new ProcessingException("Error saving notification: " + e.getMessage());
-    }
-}
-
-    // Метод для обработки обновления уведомления о школе
-    public void handleSchoolUpdateNotification(SchoolEntityDTO school) {
-        // Проверка на существующее уведомление
-        NotificationEntity existingNotification = notificationRepository.findBySchoolId(school.getId()).orElse(null);
-
-        if (existingNotification != null) {
-            System.out.println("Updating existing notification for school ID: " + school.getId());
-            existingNotification.setEvent("School updated successfully");
-            existingNotification.setStatus(NotificationStatus.SUCCESS);
-
-            try {
-                notificationRepository.save(existingNotification);
-                System.out.println("Updated notification: " + existingNotification.getEvent());
-            } catch (Exception e) {
-                throw new ProcessingException("Error updating notification: " + e.getMessage());
+    public void handleSchoolCreationNotification(SchoolEntityDTO school) {
+        try {
+            if (notificationRepository.existsBySchoolId(school.getId())) {
+                System.out.println("Notification already exists for school ID: " + school.getId());
+                return;
             }
-        } else {
-            // Если уведомление не существует, создаем новое
-            try {
-                NotificationEntity notification = createNotification(school, "School updated successfully", NotificationStatus.SUCCESS);
-                notificationRepository.save(notification);
-                System.out.println("Notification saved: " + notification.getEvent());
-            } catch (Exception e) {
-                throw new ProcessingException("Error saving notification: " + e.getMessage());
-            }
+
+            NotificationEntity notification = createNotification(school, "School registered successfully", NotificationStatus.SUCCESS);
+            notificationRepository.save(notification);
+            System.out.println("Notification saved: " + notification.getEvent());
+        } catch (Exception e) {
+            // В случае ошибки создаем уведомление со статусом FAILED
+            NotificationEntity failedNotification = createNotification(school,
+                    "School registration failed: " + e.getMessage(),
+                    NotificationStatus.FAILED);
+            notificationRepository.save(failedNotification);
+
+            throw new ProcessingException("Error saving notification: " + e.getMessage());
         }
     }
 
-    // Метод для обработки общего уведомления о школе
+    public void handleSchoolUpdateNotification(SchoolEntityDTO school) {
+        try {
+            NotificationEntity existingNotification = notificationRepository.findBySchoolId(school.getId()).orElse(null);
+
+            if (existingNotification != null) {
+                System.out.println("Updating existing notification for school ID: " + school.getId());
+                existingNotification.setEvent("School updated successfully");
+                existingNotification.setStatus(NotificationStatus.SUCCESS);
+
+                notificationRepository.save(existingNotification);
+                System.out.println("Updated notification: " + existingNotification.getEvent());
+            } else {
+                NotificationEntity notification = createNotification(school,
+                        "School updated successfully",
+                        NotificationStatus.SUCCESS);
+                notificationRepository.save(notification);
+                System.out.println("Notification saved: " + notification.getEvent());
+            }
+        } catch (Exception e) {
+            // В случае ошибки создаем уведомление со статусом FAILED
+            NotificationEntity failedNotification = createNotification(school,
+                    "School update failed: " + e.getMessage(),
+                    NotificationStatus.FAILED);
+            notificationRepository.save(failedNotification);
+
+            throw new ProcessingException("Error updating notification: " + e.getMessage());
+        }
+    }
+
     public void handleSchoolNotification(SchoolEntityDTO school) {
-        if (school.isNew()) {
-            handleSchoolCreationNotification(school);
-        } else {
-            handleSchoolUpdateNotification(school);
+        try {
+            if (school.isNew()) {
+                handleSchoolCreationNotification(school);
+            } else {
+                handleSchoolUpdateNotification(school);
+            }
+        } catch (Exception e) {
+            // Общий обработчик ошибок с созданием уведомления о неудаче
+            NotificationEntity failedNotification = createNotification(school,
+                    "School notification failed: " + e.getMessage(),
+                    NotificationStatus.FAILED);
+            notificationRepository.save(failedNotification);
+
+            throw e;
         }
     }
 
     private NotificationEntity createNotification(SchoolEntityDTO school, String eventMessage, NotificationStatus status) {
         NotificationEntity notification = new NotificationEntity();
-        notification.setSchoolId(school.getId()); // Устанавливаем ID школы
-        notification.setEvent(eventMessage); // Устанавливаем сообщение события
+        notification.setSchoolId(school.getId());
+        notification.setEvent(eventMessage);
 
-        // Формируем полный URL
-        String baseUrl = "http://localhost:8080"; // базовый URL
+        String baseUrl = "http://localhost:8080";
         String path = "/api/schools/";
-        notification.setUrl(baseUrl + path + school.getId()); // полный URL
+        notification.setUrl(baseUrl + path + school.getId());
 
-        notification.setStatus(status); // статус уведомления
-        notification.setAttemptCount(0); // или другое значение по умолчанию
+        notification.setStatus(status);
+        notification.setAttemptCount(0);
 
-        return notification; // Возвращаем созданное уведомление
+        return notification;
     }
 }

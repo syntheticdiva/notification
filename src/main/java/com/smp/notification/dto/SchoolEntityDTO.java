@@ -1,5 +1,8 @@
 package com.smp.notification.dto;
 
+import lombok.Data;
+
+@Data
 public class SchoolEntityDTO {
 
     private Long id; // ID школы
@@ -15,32 +18,6 @@ public class SchoolEntityDTO {
         this.name = name;
         this.address = address;
         this.isNew = isNew;
-    }
-
-    // Геттеры и сеттеры
-
-    public Long getId() {
-        return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public String getAddress() {
-        return address;
-    }
-
-    public void setAddress(String address) {
-        this.address = address;
     }
 
     public boolean isNew() {
