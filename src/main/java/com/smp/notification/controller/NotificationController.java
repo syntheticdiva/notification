@@ -13,9 +13,10 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/notifications")
 public class NotificationController {
 
-    @Autowired
-    private NotificationService notificationService;
-
+    private final NotificationService notificationService;
+    public NotificationController(NotificationService notificationService) {
+        this.notificationService = notificationService;
+    }
     @PostMapping
     public ResponseEntity<String> handleSchoolNotification(@RequestBody SchoolEntityDTO school) {
         notificationService.handleSchoolNotification(school);

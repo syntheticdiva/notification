@@ -3,6 +3,7 @@ package com.smp.notification.service;
 import com.smp.notification.dto.SchoolEntityDTO;
 import com.smp.notification.entity.NotificationEntity;
 import com.smp.notification.enums.NotificationStatus;
+import com.smp.notification.exception.NotificationNotFoundException;
 import com.smp.notification.exception.ProcessingException;
 import com.smp.notification.repository.NotificationRepository;
 import org.springframework.stereotype.Service;
@@ -27,7 +28,6 @@ public class NotificationService {
             notificationRepository.save(notification);
             System.out.println("Notification saved: " + notification.getEvent());
         } catch (Exception e) {
-            // В случае ошибки создаем уведомление со статусом FAILED
             NotificationEntity failedNotification = createNotification(school,
                     "School registration failed: " + e.getMessage(),
                     NotificationStatus.FAILED);
@@ -49,14 +49,9 @@ public class NotificationService {
                 notificationRepository.save(existingNotification);
                 System.out.println("Updated notification: " + existingNotification.getEvent());
             } else {
-                NotificationEntity notification = createNotification(school,
-                        "School updated successfully",
-                        NotificationStatus.SUCCESS);
-                notificationRepository.save(notification);
-                System.out.println("Notification saved: " + notification.getEvent());
+                throw new NotificationNotFoundException("Уведомление с ID " + school.getId() + " не существует");
             }
         } catch (Exception e) {
-            // В случае ошибки создаем уведомление со статусом FAILED
             NotificationEntity failedNotification = createNotification(school,
                     "School update failed: " + e.getMessage(),
                     NotificationStatus.FAILED);
@@ -74,7 +69,6 @@ public class NotificationService {
                 handleSchoolUpdateNotification(school);
             }
         } catch (Exception e) {
-            // Общий обработчик ошибок с созданием уведомления о неудаче
             NotificationEntity failedNotification = createNotification(school,
                     "School notification failed: " + e.getMessage(),
                     NotificationStatus.FAILED);
